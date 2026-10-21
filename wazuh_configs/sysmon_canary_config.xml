@@ -1,0 +1,30 @@
+<!-- Sysmon Configuration for Ransomware Canary Files Monitoring (Event IDs 11 & 23) -->
+<Sysmon schemaversion="4.90">
+  <HashAlgorithms>SHA256,MD5</HashAlgorithms>
+  <CheckRevocation>False</CheckRevocation>
+  <EventFiltering>
+    <!-- Event ID 11: FileCreate / Overwrite -->
+    <RuleGroup name="Tripwire_FileCreate" groupRelation="or">
+      <FileCreate onmatch="include">
+        <Rule name="Canary_Lexical_FileCreate" groupRelation="or">
+          <TargetFilename condition="contains">!000_</TargetFilename>
+          <TargetFilename condition="contains">#000_</TargetFilename>
+          <TargetFilename condition="contains">$000_</TargetFilename>
+          <TargetFilename condition="contains">_000_</TargetFilename>
+        </Rule>
+      </FileCreate>
+    </RuleGroup>
+
+    <!-- Event ID 23: FileDelete -->
+    <RuleGroup name="Tripwire_FileDelete" groupRelation="or">
+      <FileDelete onmatch="include">
+        <Rule name="Canary_Lexical_FileDelete" groupRelation="or">
+          <TargetFilename condition="contains">!000_</TargetFilename>
+          <TargetFilename condition="contains">#000_</TargetFilename>
+          <TargetFilename condition="contains">$000_</TargetFilename>
+          <TargetFilename condition="contains">_000_</TargetFilename>
+        </Rule>
+      </FileDelete>
+    </RuleGroup>
+  </EventFiltering>
+</Sysmon>

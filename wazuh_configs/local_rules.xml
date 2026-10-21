@@ -1,0 +1,46 @@
+<!-- Wazuh Manager Custom Rules for Ransomware Canary Tripwire & Containment -->
+<group name="local,syscheck,sysmon,tripwire,">
+  <!-- Rule 100201: Canary File Modified -->
+  <rule id="100201" level="15">
+    <if_sid>550</if_sid>
+    <field name="file" type="pcre2">(?i)(!000_|#000_|\$000_|_000_)</field>
+    <description>CRITICAL: Ransomware canary file modified - MITRE T1486 Data Encrypted for Impact</description>
+    <mitre>
+      <id>T1486</id>
+    </mitre>
+    <group>tripwire,pci_dss_11.5,gdpr_IV_35.7.d,hipaa_164.312.c.1,nist_800_53_SI.7,</group>
+  </rule>
+
+  <!-- Rule 100202: Canary File Deleted -->
+  <rule id="100202" level="15">
+    <if_sid>553</if_sid>
+    <field name="file" type="pcre2">(?i)(!000_|#000_|\$000_|_000_)</field>
+    <description>CRITICAL: Ransomware canary file deleted - MITRE T1486 Data Encrypted for Impact</description>
+    <mitre>
+      <id>T1486</id>
+    </mitre>
+    <group>tripwire,pci_dss_11.5,gdpr_IV_35.7.d,hipaa_164.312.c.1,nist_800_53_SI.7,</group>
+  </rule>
+
+  <!-- Rule 100203: Sysmon Canary Create / Overwrite / Delete -->
+  <rule id="100203" level="15">
+    <if_sid>61613,92213</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)(!000_|#000_|\$000_|_000_)</field>
+    <description>CRITICAL: Sysmon detected canary file creation/overwrite/delete by unauthorized process - MITRE T1486</description>
+    <mitre>
+      <id>T1486</id>
+    </mitre>
+    <group>tripwire,sysmon,attack.impact,attack.t1486,</group>
+  </rule>
+
+  <!-- Rule 100204: Active Response Host Isolation Success -->
+  <rule id="100204" level="12">
+    <if_sid>600</if_sid>
+    <match>Active response: isolate-ransomware-host</match>
+    <description>ACTIVE RESPONSE: Host network containment and process termination executed successfully</description>
+    <mitre>
+      <id>T1486</id>
+    </mitre>
+    <group>tripwire,active_response,</group>
+  </rule>
+</group>

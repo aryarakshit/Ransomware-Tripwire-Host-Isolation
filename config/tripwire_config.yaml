@@ -1,0 +1,36 @@
+experiment_settings:
+  total_dummy_user_files: 500
+  encryption_speed_ms_per_file: 15
+  wazuh_manager_ip: "192.168.56.10"
+  max_allowed_blast_radius_pct: 5.0
+  target_ttd_seconds: 1.5
+
+monitored_directories:
+  - "C:\\Users\\Public\\Documents"
+  - "C:\\Users\\LabAdmin\\Desktop"
+  - "C:\\Users\\LabAdmin\\Documents"
+  - "C:\\Shares\\Finance_Records"
+
+canary_files:
+  - filename: "!000_CONFIDENTIAL_Payroll_2026.xlsx"
+    type: "spreadsheet_honeytoken"
+    magic_header: "PK\\x03\\x04"
+    description: "Lexicographical first-hit Excel decoy containing fake salary tables"
+  - filename: "#000_AWS_Production_Root_Keys.txt"
+    type: "credential_honeytoken"
+    content_prefix: "AKIAIOSFODNN7EXAMPLE"
+    description: "Fake cloud credential file placed at top of directory sort order"
+  - filename: "$000_Executive_M&A_Targets.docx"
+    type: "document_honeytoken"
+    magic_header: "PK\\x03\\x04"
+    description: "High-value M&A decoy document"
+  - filename: "_000_Backup_Recovery_Seeds.pdf"
+    type: "pdf_honeytoken"
+    magic_header: "%PDF-1.7"
+    description: "Decoy recovery vault document"
+
+wazuh_rule_ids:
+  canary_modified: "100201"
+  canary_deleted: "100202"
+  sysmon_canary_create_overwrite: "100203"
+  active_response_isolated: "100204"
