@@ -1,7 +1,7 @@
 """
 Master Benchmark Runner: Executes end-to-end multi-run deception tripwire tests,
 measures exact millisecond Time-to-Detect (TTD) and Time-to-Isolate (TTI),
-and generates the portfolio case study report.
+and generates the empirical security study report.
 """
 
 import datetime
@@ -106,7 +106,7 @@ def generate_study_report(
     config: dict,
     output_path: Path,
 ) -> None:
-    """Generates the portfolio case study report in markdown."""
+    """Generates the empirical containment study report in markdown."""
     summary = aggregator.summary()
     runs = aggregator.runs
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -237,10 +237,10 @@ The active response script executes a 3-step surgical containment procedure:
 
 ---
 
-## 6. Portfolio & Resume Impact Bullet Point
+## 6. Incident Response & Containment Summary
 
-> **Cybersecurity / SOC Automation Engineering:**  
-> *"Architected and deployed a deception-based ransomware containment system (`ransomware-tripwire-soc`) utilizing lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata; engineered an automated Active Response pipeline that neutralized simulated MITRE ATT&CK T1486 ransomware in **{summary.get('mean_ttd_ms', 0):.1f} ms** Time-to-Detect with a **{summary.get('mean_preservation_rate_pct', 0):.2f}% user data preservation rate**."*
+> **Detection & Mitigation Metric:**  
+> The deception-based ransomware containment system (`ransomware-tripwire-soc`) leverages lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata. The automated Active Response pipeline consistently neutralizes simulated MITRE ATT&CK T1486 ransomware attacks in **{summary.get('mean_ttd_ms', 0):.1f} ms** Time-to-Detect with a **{summary.get('mean_preservation_rate_pct', 0):.2f}% user data preservation rate**.
 
 ---
 *Report automatically compiled by `run_tripwire_benchmark.py`.*
@@ -363,7 +363,7 @@ def main():
     # Generate Report
     generate_study_report(aggregator, config, report_path)
     console.print(
-        f"\n[bold green][OK] Benchmark complete! Portfolio study report generated at:[/bold green] [cyan]{report_path}[/cyan]\n"
+        f"\n[bold green][OK] Benchmark complete! Study report generated at:[/bold green] [cyan]{report_path}[/cyan]\n"
     )
 
 
