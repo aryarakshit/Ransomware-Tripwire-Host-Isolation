@@ -256,8 +256,8 @@ These results come from 5 iterations of the in-process simulator against **500 g
 
 ### 1. Installation
 ```bash
-git clone https://github.com/aryarakshit/ransomware-tripwire-soc.git
-cd ransomware-tripwire-soc
+git clone https://github.com/aryarakshit/Ransomware-Tripwire-Host-Isolation-.git
+cd Ransomware-Tripwire-Host-Isolation-
 pip install -r requirements.txt
 ```
 
@@ -349,6 +349,6 @@ This project is licensed under the [MIT License](LICENSE).
   title = {Deception-Based Ransomware Tripwire & Automated Host Isolation},
   year = {2026},
   publisher = {GitHub},
-  howpublished = {\url{https://github.com/aryarakshit/Ransomware-Tripwire-Host-Isolation}}
+  howpublished = {\url{https://github.com/aryarakshit/Ransomware-Tripwire-Host-Isolation-}}
 }
 ```
