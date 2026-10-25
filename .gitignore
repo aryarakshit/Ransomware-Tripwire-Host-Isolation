@@ -26,3 +26,4 @@ Desktop.ini
 .agents/
 .planning/
 .benchmarks/
+*blueprint*.md
