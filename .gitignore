@@ -21,3 +21,8 @@ canary_manifest.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Local AI agent tooling (GSD) - not part of the project
+.agents/
+.planning/
+.benchmarks/

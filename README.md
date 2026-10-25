@@ -3,11 +3,19 @@
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-T1486-red.svg)](https://attack.mitre.org/techniques/T1486/)
 [![Detection](https://img.shields.io/badge/Detection-Sysmon%20%7C%20Wazuh%20FIM%20Whodata-blue.svg)](https://wazuh.com)
 [![Active Response](https://img.shields.io/badge/Active%20Response-Process%20Kill%20%2B%20Host%20Isolation-orange.svg)]()
-[![Preservation](https://img.shields.io/badge/User%20Data%20Preservation-100%25-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/pytest-100%25%20Passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/pytest-8%20passing-success.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An enterprise-grade defense-in-depth security engineering solution that detects and neutralizes ransomware encryption routines (**MITRE ATT&CK T1486**) at the first touched file in **< 35 milliseconds**, achieving a **100% user data preservation rate** with zero false positives.
+A deception-based approach to ransomware (**MITRE ATT&CK T1486**): plant lexicographically-first canary files so an alphabetically-enumerating encryptor hits a decoy before real user files, detect the canary change with Wazuh FIM whodata, and isolate the host via active response.
+
+> [!IMPORTANT]
+> **Validation status: the benchmark is an in-process Python simulation, not a live Wazuh run.** Read the millisecond figures accordingly:
+> - **Detection is a direct function call** in `run_tripwire_benchmark.py` (the simulated encryptor calls the monitor in-process). A real chain is Sysmon/FIM → agent → manager → active-response script, which takes **seconds**, not the ~15–35 ms reported here. Those numbers are simulation artifacts.
+> - **The attacker is assumed to enumerate in strict alphabetical order**, which is what guarantees the `!000_`/`#000_` canaries are hit first and the 0% blast radius. Real ransomware often enumerates by extension, randomizes, or multithreads, so the "100% preservation" is a property of the simulated attacker, not a guarantee.
+> - **Sysmon has no file-modified event.** Encrypt-in-place then rename may not raise FileCreate (11) / FileDelete (23) reliably, so **Wazuh FIM (`syscheck`, rule 100201)** is the real detector here; the Sysmon rule is a secondary signal.
+> - Not yet run against real ransomware or a real Wazuh manager. The value is the deception design, the rules, and the response scripts — validate on the lab VM before quoting any latency.
+>
+> The PowerShell scripts and split agent/manager configs are written for real deployment and are syntax-checked; they just haven't been exercised end-to-end on live Wazuh.
 
 ---
 
@@ -212,17 +220,19 @@ When Wazuh triggers rules `100201`, `100202`, or `100203`, the Active Response s
 
 ---
 
-## 6. Empirical Benchmark Results
+## 6. Simulation Results
 
-The system was evaluated using 5 multi-threaded benchmark iterations simulating an active `T1486` ransomware attack against **500 user documents** and **16 canary files**:
+These come from 5 iterations of the in-process simulator against **500 generated user files** and **16 canaries**. They demonstrate the deception logic end to end; they are **not** measured against real ransomware or a real Wazuh active-response chain (see the validation note at the top). Exact milliseconds vary per run and reflect Python function-call timing, not detection latency on a real host.
 
-| Metric | Formulation | Empirical Result | Target SLA | Status |
-| :--- | :---: | :---: | :---: | :---: |
-| **Time-to-Detect ($T_{\text{TTD}}$)** | $t_{\text{alert\_fired}} - t_{\text{canary\_touched}}$ | **23.63 ms** | `< 1,000.0 ms` | **PASS (42x faster)** |
-| **Time-to-Isolate ($T_{\text{TTI}}$)** | $t_{\text{host\_isolated}} - t_{\text{attack\_start}}$ | **32.97 ms** | `< 2,000.0 ms` | **PASS (60x faster)** |
-| **File Blast Radius ($B_{\text{affected}}$)** | $\left(\frac{F_{\text{user\_encrypted}}}{F_{\text{user\_total}}}\right) \times 100\%$ | **0.00%** | `< 5.00%` | **PASS (0 files lost)** |
-| **Data Preservation Rate ($R_{\text{saved}}$)** | $100\% - B_{\text{affected}}$ | **100.00%** | `> 95.00%` | **PASS** |
-| **Containment Success Rate** | $\frac{\text{Neutralized Attacks}}{\text{Total Attacks}} \times 100\%$ | **100.0%** | `100.0%` | **PASS** |
+| Metric | What it measures here | Simulation Result | Note |
+| :--- | :--- | :---: | :--- |
+| **Time-to-Detect** | canary-touch → in-process monitor callback | ~15–35 ms | Function-call latency, not FIM→manager→AR (seconds on real Wazuh). |
+| **Time-to-Isolate** | attack start → simulated isolation call | ~25–40 ms | Simulated; real netsh/firewall isolation is slower. |
+| **File Blast Radius** | user files encrypted ÷ user files total | 0.00% | Follows from the attacker enumerating alphabetically by construction. |
+| **Data Preservation Rate** | 100% − blast radius | 100.00% | Same caveat: property of the simulated attacker. |
+| **Containment Success Rate** | neutralized ÷ total simulated attacks | 100.0% | In-process; no real process kill occurred. |
+
+To make these real: run the atomic script (`windows_scripts/invoke_atomic_t1486.ps1`) in the sandbox against deployed canaries on a Windows VM with a real Wazuh agent + manager, and measure the manager-side alert and active-response timestamps.
 
 ---
 
@@ -234,7 +244,7 @@ The system was evaluated using 5 multi-threaded benchmark iterations simulating 
 
 ### 1. Installation
 ```bash
-git clone https://github.com/your-org/ransomware-tripwire-soc.git
+git clone https://github.com/aryarakshit/ransomware-tripwire-soc.git
 cd ransomware-tripwire-soc
 pip install -r requirements.txt
 ```
@@ -242,6 +252,19 @@ pip install -r requirements.txt
 ### 2. Run Test Suite
 ```bash
 pytest tests/ -v
+```
+
+```text
+tests/test_tripwire_containment.py::test_t1486_containment_and_preservation PASSED [ 12%]
+tests/test_wazuh_xml.py::test_local_rules_xml_well_formed PASSED         [ 25%]
+tests/test_wazuh_xml.py::test_sysmon_xml_well_formed PASSED              [ 37%]
+tests/test_wazuh_xml.py::test_agent_fim_conf_well_formed PASSED          [ 50%]
+tests/test_wazuh_xml.py::test_manager_active_response_conf_well_formed PASSED [ 62%]
+tests/test_wazuh_xml.py::test_wazuh_rule_definitions PASSED              [ 75%]
+tests/test_wazuh_xml.py::test_canary_regex_accuracy PASSED               [ 87%]
+tests/test_wazuh_xml.py::test_sysmon_canary_targets PASSED               [100%]
+
+============================== 8 passed in 0.37s ==============================
 ```
 
 ### 3. Run End-to-End Benchmark Simulation
@@ -266,11 +289,13 @@ Install or update Microsoft Sysmon:
 sysmon.exe -i wazuh_configs\sysmon_canary_config.xml
 ```
 
-### Step 3: Configure Wazuh Agent
-Append the `<syscheck>` and `<active-response>` blocks from `wazuh_configs/ossec_fim_whodata.conf` to `C:\Program Files (x86)\ossec-agent\ossec.conf` and restart the agent service:
-```cmd
-net stop WazuhSvc && net start WazuhSvc
-```
+### Step 3: Configure Wazuh (agent vs manager — these go in different places)
+- **On the agent** (`C:\Program Files (x86)\ossec-agent\ossec.conf`): append the `<syscheck>` block from `wazuh_configs/ossec_fim_whodata.conf`, then restart the agent:
+  ```cmd
+  net stop WazuhSvc && net start WazuhSvc
+  ```
+- **On the manager** (`/var/ossec/etc/ossec.conf`): add the `<command>` and `<active-response>` blocks from `wazuh_configs/manager_active_response.conf`, add the rules from `wazuh_configs/local_rules.xml` to the manager's `local_rules.xml`, then `systemctl restart wazuh-manager`. The agent ignores active-response blocks, so putting them in the agent config is a no-op.
+- Deploy `isolate_host.cmd` and `isolate_host.ps1` to the agent's `active-response\bin\` directory.
 
 ### Step 4: Configure Wazuh Manager Rules
 Copy `wazuh_configs/local_rules.xml` to `/var/ossec/etc/rules/local_rules.xml` on the Wazuh Manager and restart the manager:
@@ -300,7 +325,18 @@ powershell.exe -ExecutionPolicy Bypass -File windows_scripts\restore_host.ps1
 
 ---
 
-## 10. License & Disclaimer
+## 10. License & Citation
 
 This project is licensed under the [MIT License](LICENSE).  
 **Disclaimer:** All offensive simulation components (`invoke_atomic_t1486.ps1` and `core/t1486_ransomware_sim.py`) are strictly engineered for authorized defensive security research, validation, and benchmarking within controlled laboratory environments.
+
+### Citation
+```bibtex
+@misc{ransomware_tripwire_2026,
+  author = {Arya Rakshit},
+  title = {Deception-Based Ransomware Tripwire & Automated Host Isolation},
+  year = {2026},
+  publisher = {GitHub},
+  howpublished = {\url{https://github.com/aryarakshit/Ransomware-Tripwire-Host-Isolation}}
+}
+```

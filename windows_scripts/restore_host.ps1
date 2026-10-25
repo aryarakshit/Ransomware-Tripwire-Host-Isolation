@@ -23,7 +23,7 @@ try {
     Write-Host "[*] Restoring default Windows Firewall policy (blockinbound, allowoutbound)..." -ForegroundColor Yellow
     netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound | Out-Null
 
-    Write-Host "[✓] Host network isolation removed. Normal traffic restored." -ForegroundColor Green
+    Write-Host "[OK] Host network isolation removed. Normal traffic restored." -ForegroundColor Green
 } catch {
     Write-Error "Failed to restore firewall defaults (Administrator privileges required): $_"
 }

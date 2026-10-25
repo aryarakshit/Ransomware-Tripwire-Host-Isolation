@@ -116,7 +116,9 @@ def generate_study_report(
 **Generated:** {now_str}  
 **MITRE ATT&CK Classification:** `T1486` (Data Encrypted for Impact)  
 **System Name:** `ransomware-tripwire-soc`  
-**Defense Architecture:** Lexicographical Deception Tripwire, Sysmon Kernel Auditing, Wazuh FIM Whodata, and Automated Active Response  
+**Defense Architecture:** Lexicographical Deception Tripwire, Sysmon Kernel Auditing, Wazuh FIM Whodata, and Automated Active Response
+
+> **Note:** This report comes from an in-process Python simulation. Detection is a direct function call, and the simulated attacker enumerates files in strict alphabetical order, so the millisecond latencies and 0% blast radius are simulation artifacts — not measurements against real ransomware or a real Wazuh FIM → manager → active-response chain (which takes seconds). Validate on a Windows VM with live Wazuh before quoting these figures.
 
 ---
 
@@ -239,8 +241,8 @@ The active response script executes a 3-step surgical containment procedure:
 
 ## 6. Incident Response & Containment Summary
 
-> **Detection & Mitigation Metric:**  
-> The deception-based ransomware containment system (`ransomware-tripwire-soc`) leverages lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata. The automated Active Response pipeline consistently neutralizes simulated MITRE ATT&CK T1486 ransomware attacks in **{summary.get('mean_ttd_ms', 0):.1f} ms** Time-to-Detect with a **{summary.get('mean_preservation_rate_pct', 0):.2f}% user data preservation rate**.
+> **Design summary:**
+> The deception-based ransomware containment design (`ransomware-tripwire-soc`) combines lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata with an automated active-response isolation script. In this in-process simulation of an alphabetically-enumerating T1486 attacker, all {summary.get('total_runs', 5)} runs detected the first canary before any of the 500 user files and preserved {summary.get('mean_preservation_rate_pct', 0):.2f}% of them. The sub-second timings are function-call latencies, not real FIM→manager→active-response measurements; validate on a live Wazuh VM for production figures.
 
 ---
 *Report automatically compiled by `run_tripwire_benchmark.py`.*

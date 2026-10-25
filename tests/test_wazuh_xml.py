@@ -11,6 +11,7 @@ CONFIG_DIR = Path(__file__).parent.parent / "wazuh_configs"
 LOCAL_RULES_PATH = CONFIG_DIR / "local_rules.xml"
 SYSMON_CONFIG_PATH = CONFIG_DIR / "sysmon_canary_config.xml"
 OSSEC_CONF_PATH = CONFIG_DIR / "ossec_fim_whodata.conf"
+MANAGER_AR_PATH = CONFIG_DIR / "manager_active_response.conf"
 
 
 def test_local_rules_xml_well_formed():
@@ -31,18 +32,33 @@ def test_sysmon_xml_well_formed():
     assert root.attrib.get("schemaversion") == "4.90"
 
 
-def test_ossec_fim_conf_well_formed():
-    """Verify ossec_fim_whodata.conf is well-formed XML with syscheck whodata and active-response."""
+def test_agent_fim_conf_well_formed():
+    """Agent config holds whodata FIM only; active-response belongs on the manager."""
     assert OSSEC_CONF_PATH.exists(), f"{OSSEC_CONF_PATH} does not exist"
     tree = ET.parse(OSSEC_CONF_PATH)
     root = tree.getroot()
     assert root.tag == "ossec_config"
 
-    # Verify syscheck whodata is enabled
+    # Verify syscheck whodata is enabled on at least 4 directories
     whodata_dirs = root.findall(".//directories[@whodata='yes']")
     assert len(whodata_dirs) >= 4, "Expected at least 4 monitored whodata directories"
 
-    # Verify active response binding
+    # The agent file must NOT carry active-response (an agent ignores it anyway)
+    assert root.find(".//active-response") is None, (
+        "active-response must live in manager_active_response.conf, not the agent config"
+    )
+
+
+def test_manager_active_response_conf_well_formed():
+    """Manager config carries the command + active-response binding to the canary rules."""
+    assert MANAGER_AR_PATH.exists(), f"{MANAGER_AR_PATH} does not exist"
+    tree = ET.parse(MANAGER_AR_PATH)
+    root = tree.getroot()
+    assert root.tag == "ossec_config"
+
+    cmd = root.find(".//command")
+    assert cmd is not None and cmd.find("name").text == "isolate-ransomware-host"
+
     ar = root.find(".//active-response")
     assert ar is not None
     assert ar.find("command").text == "isolate-ransomware-host"

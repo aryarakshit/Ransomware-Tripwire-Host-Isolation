@@ -1,9 +1,11 @@
 # Ransomware Tripwire & Automated Host Isolation: Empirical Study Report
 
-**Generated:** 2026-10-21 13:46:16  
+**Generated:** 2026-10-25 13:06:33  
 **MITRE ATT&CK Classification:** `T1486` (Data Encrypted for Impact)  
 **System Name:** `ransomware-tripwire-soc`  
-**Defense Architecture:** Lexicographical Deception Tripwire, Sysmon Kernel Auditing, Wazuh FIM Whodata, and Automated Active Response  
+**Defense Architecture:** Lexicographical Deception Tripwire, Sysmon Kernel Auditing, Wazuh FIM Whodata, and Automated Active Response
+
+> **Note:** This report comes from an in-process Python simulation. Detection is a direct function call, and the simulated attacker enumerates files in strict alphabetical order, so the millisecond latencies and 0% blast radius are simulation artifacts — not measurements against real ransomware or a real Wazuh FIM → manager → active-response chain (which takes seconds). Validate on a Windows VM with live Wazuh before quoting these figures.
 
 ---
 
@@ -29,8 +31,8 @@ flowchart LR
 
 Across **5 independent benchmark executions** simulating an active `T1486` encryption adversary against **500 user documents** and **16 canary files**:
 
-* **Time-to-Detect ($T_{\text{TTD}}$):** Average **23.63 ms** (Min: 14.33 ms, Max: 31.13 ms).
-* **Time-to-Isolate ($T_{\text{TTI}}$):** Average **32.97 ms** (Min: 23.40 ms, Max: 40.57 ms).
+* **Time-to-Detect ($T_{\text{TTD}}$):** Average **20.89 ms** (Min: 9.33 ms, Max: 29.31 ms).
+* **Time-to-Isolate ($T_{\text{TTI}}$):** Average **30.15 ms** (Min: 18.54 ms, Max: 38.34 ms).
 * **Mean File Blast Radius ($B_{\text{affected}}$):** **0.00%** (Average user files affected: 0 of 500).
 * **Data Preservation Rate ($R_{\text{saved}}$):** **100.00%** of all user documents remained intact and unencrypted.
 * **Containment Success Rate:** **100%** (5 of 5 adversary processes neutralized).
@@ -41,18 +43,18 @@ Across **5 independent benchmark executions** simulating an active `T1486` encry
 
 | Run # | First Canary Touched | $T_{\text{TTD}}$ (ms) | $T_{\text{TTI}}$ (ms) | Canaries Hit | User Files Hit | Blast Radius (%) | Data Preserved (%) | Status |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `01` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `26.48` | `35.90` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
-| `02` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `14.33` | `23.40` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
-| `03` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `21.03` | `30.09` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
-| `04` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `31.13` | `40.57` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
-| `05` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `25.19` | `34.88` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
+| `01` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `26.95` | `36.50` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
+| `02` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `13.79` | `23.25` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
+| `03` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `9.33` | `18.54` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
+| `04` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `25.08` | `34.15` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
+| `05` | `!000_CONFIDENTIAL_Payroll_2026.xlsx` | `29.31` | `38.34` | `1` | `0` | `0.00%` | `100.00%` | ✅ ISOLATED |
 
 ### Summary Statistics
 
 | Metric | Mean | Min | Max | Target SLA |
 | :--- | :---: | :---: | :---: | :---: |
-| **Time-to-Detect ($T_{\text{TTD}}$)** | `23.63 ms` | `14.33 ms` | `31.13 ms` | `< 1,000 ms` |
-| **Time-to-Isolate ($T_{\text{TTI}}$)** | `32.97 ms` | `23.40 ms` | `40.57 ms` | `< 2,000 ms` |
+| **Time-to-Detect ($T_{\text{TTD}}$)** | `20.89 ms` | `9.33 ms` | `29.31 ms` | `< 1,000 ms` |
+| **Time-to-Isolate ($T_{\text{TTI}}$)** | `30.15 ms` | `18.54 ms` | `38.34 ms` | `< 2,000 ms` |
 | **Blast Radius Percentage ($B_{\text{affected}}$)** | `0.00%` | `0.00%` | `1.00%` | `< 5.00%` |
 | **Data Preservation Rate ($R_{\text{saved}}$)** | `100.00%` | `99.00%` | `100.00%` | `> 95.00%` |
 
@@ -122,8 +124,8 @@ The active response script executes a 3-step surgical containment procedure:
 
 ## 6. Incident Response & Containment Summary
 
-> **Detection & Mitigation Metric:**  
-> The deception-based ransomware containment system (`ransomware-tripwire-soc`) leverages lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata. The automated Active Response pipeline consistently neutralizes simulated MITRE ATT&CK T1486 ransomware attacks in **23.6 ms** Time-to-Detect with a **100.00% user data preservation rate**.
+> **Design summary:**
+> The deception-based ransomware containment design (`ransomware-tripwire-soc`) combines lexicographical honeytokens (`!000_`), Sysmon Event IDs 11/23, and Wazuh FIM whodata with an automated active-response isolation script. In this in-process simulation of an alphabetically-enumerating T1486 attacker, all 5 runs detected the first canary before any of the 500 user files and preserved 100.00% of them. The sub-second timings are function-call latencies, not real FIM→manager→active-response measurements; validate on a live Wazuh VM for production figures.
 
 ---
 *Report automatically compiled by `run_tripwire_benchmark.py`.*

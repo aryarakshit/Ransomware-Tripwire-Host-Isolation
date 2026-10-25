@@ -54,18 +54,20 @@ if (-not [string]::IsNullOrWhiteSpace($rawInput)) {
 
 # 2. Extract Process ID from Whodata / Sysmon hierarchy
 if ($alertData) {
-    if ($alertData.parameters.alert.data.audit.process_id) {
-        $offendingPID = [int]$alertData.parameters.alert.data.audit.process_id
-        Write-ARLog "Extracted PID $offendingPID from FIM whodata."
-    } elseif ($alertData.parameters.alert.data.win.eventdata.processId) {
-        $offendingPID = [int]$alertData.parameters.alert.data.win.eventdata.processId
-        Write-ARLog "Extracted PID $offendingPID from Sysmon Event."
-    } elseif ($alertData.data.audit.process_id) {
-        $offendingPID = [int]$alertData.data.audit.process_id
-        Write-ARLog "Extracted PID $offendingPID from root whodata."
-    } elseif ($alertData.data.win.eventdata.processId) {
-        $offendingPID = [int]$alertData.data.win.eventdata.processId
-        Write-ARLog "Extracted PID $offendingPID from root Sysmon."
+    # Wazuh active response delivers the alert wrapped under .parameters.alert; for
+    # FIM whodata the responsible PID is at syscheck.audit.process.id, and for a
+    # Sysmon event it is at data.win.eventdata.processId. Check both, wrapped and not.
+    $alertRoots = @($alertData.parameters.alert, $alertData) | Where-Object { $_ }
+    foreach ($root in $alertRoots) {
+        if ($root.syscheck.audit.process.id) {
+            $offendingPID = [int]$root.syscheck.audit.process.id
+            Write-ARLog "Extracted PID $offendingPID from FIM whodata (syscheck.audit.process.id)."
+            break
+        } elseif ($root.data.win.eventdata.processId) {
+            $offendingPID = [int]$root.data.win.eventdata.processId
+            Write-ARLog "Extracted PID $offendingPID from Sysmon event (win.eventdata.processId)."
+            break
+        }
     }
 }
 
@@ -89,7 +91,7 @@ if ($offendingPID -gt 0) {
 }
 
 # 4. Quarantine Host via Windows Firewall (Strict SOC Whitelist)
-Write-ARLog "Applying Windows Firewall network isolation (Whitelist: $WazuhManagerIP:1514,1515)..."
+Write-ARLog "Applying Windows Firewall network isolation (Whitelist: ${WazuhManagerIP}:1514,1515)..."
 
 try {
     # Delete prior tripwire rules if they exist

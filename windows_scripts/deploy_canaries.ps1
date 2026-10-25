@@ -130,4 +130,4 @@ foreach ($dir in $TargetDirectories) {
 
 # 3. Export Manifest
 $Manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $ManifestOutput -Encoding UTF8
-Write-Host "`n[✓] Canary deployment manifest written to: $ManifestOutput" -ForegroundColor Cyan
+Write-Host "`n[OK] Canary deployment manifest written to: $ManifestOutput" -ForegroundColor Cyan
